@@ -1,5 +1,6 @@
 mod set;
 mod powerplan;
+
 use set::*;
 
 use winreg::enums::{
@@ -8,6 +9,10 @@ use winreg::enums::{
 use winreg::transaction::Transaction;
 use winreg::RegKey;
 use winreg::RegValue;
+
+// println!("\x1b[0;92m INFO \x1b[0m");
+// println!("\x1b[0;93m WARN \x1b[0m");
+// println!("\x1b[0;91m ERR \x1b[0m");
 
 struct U32Element {
     key: String,
@@ -139,38 +144,33 @@ pub fn factory_settings(dpi: &u32) -> Settings {
             data: vec![
                 // NoLazyMode https://github.com/djdallmann/GamingPCSetup/blob/master/CONTENT/RESEARCH/WINSERVICES/README.md#q-what-the-heck-is-nolazymode-is-it-real-what-does-it-do
 
-                // Either::U32Element(U32Element { // The GPU priority. The range of values is 0-31. This priority is not yet used.
-                //     key: String::from("GPU Priority"),
-                //     value: 8u32,
-                //     default: Some(8u32),
-                // }),
                 Either::U32Element(U32Element {
                     key: String::from("Priority"), // The task priority. The range of values is 1 (low) to 8 (high).For tasks with a Scheduling Category of High, this value is always treated as 2.
                     value: 8u32,
                     default: Some(2u32),
                 }),
-                // Either::StringElement(StringElement {
-                //     key: String::from("Scheduling Category"),
-                //     value: String::from("Medium"),
-                //     default: Some(String::from("Medium")),
-                // }),
-                // Either::StringElement(StringElement { // This value is not use
-                //     key: String::from("SFIO Priority"),
-                //     value: String::from("High"),
-                //     default: Some(String::from("Normal")),
-                // }),
-                
-                // https://github.com/djdallmann/GamingPCSetup/blob/master/CONTENT/RESEARCH/WINSERVICES/README.md#q-what-does-the-hidden-mmcss-latency-sensitive-registry-key-actually-do-what-is-the-default-value
-                // Either::StringElement(StringElement { // The default value of Latency Sensitive is TRUE at least on Windows 10
-                //     key: String::from("Latency Sensitive"),
-                //     value: String::from("True"),
-                //     default: None,
-                // }),
             ],
         },
 
         // https://www.overclock.net/threads/research-on-multimedia-class-scheduler-service-mmcss.1774590/
         // The most commonly requested task is Audio, this will occur naturally when Windows applications make requests to Microsofts High Level Apis for Audio playback.
+        RegTweaks {
+            path: String::from(
+                "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Pro Audio",
+            ),
+            data: vec![
+                Either::U32Element(U32Element {
+                    key: String::from("Priority"),
+                    value: 8u32,
+                    default: Some(2u32),
+                }),
+                Either::StringElement(StringElement {
+                    key: String::from("Scheduling Category"),
+                    value: String::from("Medium"),
+                    default: Some(String::from("High")),
+                }),
+            ],
+        },
         RegTweaks {
             path: String::from(
                 "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio",
@@ -579,58 +579,6 @@ pub fn factory_settings(dpi: &u32) -> Settings {
                 }),
             ],
         },
-
-        // The Road to Fullscreen Optimizations
-        // https://devblogs.microsoft.com/directx/demystifying-full-screen-optimizations/
-        RegTweaks {
-            path: String::from(
-                "SYSTEM\\GameConfigStore",
-            ),
-            data: vec![
-                // Disable Xbox Features
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_Enabled"),
-                    value: 0u32,
-                    default: None,
-                }),
-                // Disable Fullscreen optimizations
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_DSEBehavior"),
-                    value: 2u32,
-                    default: None,
-                }),
-                // Disable Fullscreen optimizations
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_FSEBehaviorMode"),
-                    value: 2u32,
-                    default: None,
-                }),
-                // Disable Fullscreen optimizations
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_FSEBehavior"),
-                    value: 2u32,
-                    default: None,
-                }),
-                // Disable Fullscreen optimizations
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_HonorUserFSEBehaviorMode"),
-                    value: 1u32,
-                    default: None,
-                }),
-                // Disable Fullscreen optimizations
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_DXGIHonorFSEWindowsCompatible"),
-                    value: 1u32,
-                    default: None,
-                }),
-                // Disable Fullscreen optimizations
-                Either::U32Element(U32Element {
-                    key: String::from("GameDVR_EFSEFeatureFlags"),
-                    value: 0u32,
-                    default: None,
-                }),
-            ],
-        },
     ];
 
     let current_user = vec![
@@ -665,7 +613,7 @@ pub fn factory_settings(dpi: &u32) -> Settings {
             ],
         },
         RegTweaks {
-            path: String::from("SOFTWARE\\Microsoft\\GameBar"),
+            path: String::from("Software\\Microsoft\\GameBar"),
             data: vec![
                 Either::U32Element(U32Element {
                     key: String::from("AllowAutoGameMode"),
@@ -686,6 +634,110 @@ pub fn factory_settings(dpi: &u32) -> Settings {
                     key: String::from("UseNexusForGameBarEnabled"),
                     value: 0u32,
                     default: None,
+                }),
+            ],
+        },
+
+        RegTweaks {
+            path: String::from("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize"),
+            data: vec![
+                Either::U32Element(U32Element {
+                    key: String::from("StartupDelayInMSec"),
+                    value: 0u32,
+                    default: None,
+                }),
+            ],
+        },
+
+        // RegTweaks {
+        //     path: String::from(
+        //         "Software\\Microsoft\\GameBar",
+        //     ),
+        //     data: vec![
+        //         Either::U32Element(U32Element {
+        //             key: String::from("ShowStartupPanel"),
+        //             value: 0u32,
+        //             default: None, // TODO: 
+        //         }),
+        //         Either::U32Element(U32Element {
+        //             key: String::from("GamePanelStartupTipIndex"),
+        //             value: 3u32,
+        //             default: None, // TODO: 
+        //         }),
+        //         Either::U32Element(U32Element {
+        //             key: String::from("AllowAutoGameMode"),
+        //             value: 0u32,
+        //             default: None, // TODO: 
+        //         }),
+        //         Either::U32Element(U32Element {
+        //             key: String::from("UseNexusForGameBarEnabled"),
+        //             value: 0u32,
+        //             default: None, // TODO: 
+        //         }),
+        //     ],
+        // },
+
+        RegTweaks {
+            path: String::from(
+                "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+            ),
+            data: vec![
+                Either::U32Element(U32Element {
+                    key: String::from("AppCaptureEnabled"),
+                    value: 0u32,
+                    default: None, // TODO: 
+                }),
+            ],
+        },
+
+        // The Road to Fullscreen Optimizations
+        // https://devblogs.microsoft.com/directx/demystifying-full-screen-optimizations/
+        RegTweaks {
+            path: String::from(
+                "SYSTEM\\GameConfigStore",
+            ),
+            data: vec![
+                // Disable Xbox Features
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_Enabled"),
+                    value: 0u32,
+                    default: None, // TODO: 
+                }),
+                // Disable Fullscreen optimizations
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_DSEBehavior"),
+                    value: 2u32,
+                    default: None, // TODO: 
+                }),
+                // Disable Fullscreen optimizations
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_FSEBehaviorMode"),
+                    value: 2u32,
+                    default: None, // TODO: 
+                }),
+                // Disable Fullscreen optimizations
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_FSEBehavior"),
+                    value: 2u32,
+                    default: None, // TODO: 
+                }),
+                // Disable Fullscreen optimizations
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_HonorUserFSEBehaviorMode"),
+                    value: 1u32,
+                    default: None, // TODO: 
+                }),
+                // Disable Fullscreen optimizations
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_DXGIHonorFSEWindowsCompatible"),
+                    value: 1u32,
+                    default: None, // TODO: 
+                }),
+                // Disable Fullscreen optimizations
+                Either::U32Element(U32Element {
+                    key: String::from("GameDVR_EFSEFeatureFlags"),
+                    value: 0u32,
+                    default: None, // TODO: 
                 }),
             ],
         },
@@ -721,7 +773,7 @@ pub fn factory_settings(dpi: &u32) -> Settings {
     }
 }
 
-
+#[allow(dead_code)]
 pub fn factory_powerplan() -> PowerPlan {
 // Computer\HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Power\User\PowerSchemes\2cd4d4f0-d578-48f4-be43-d145b9b71cbe\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583
 // ACSettingIndex 0x64 (100)
@@ -896,15 +948,20 @@ pub fn factory_powerplan() -> PowerPlan {
     }
 }
 
-pub fn default_powerplan() {
-    powerplan::default();
-}
+// pub fn default_powerplan() {
+//     powerplan::default();
+// }
 
+#[allow(dead_code)]
 pub fn check_powerplan(powerplan: &PowerPlan, write_settings: bool) {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
 
+    // Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes
+    // Computer\HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Power\User\PowerSchemes
+    // ActivePowerScheme
     let power_scheme: RegKey= hklm.open_subkey("SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes").unwrap();
     let scheme_guid: String;
+
 
     match &powerplan.scheme {
         None => {
@@ -920,6 +977,16 @@ pub fn check_powerplan(powerplan: &PowerPlan, write_settings: bool) {
             println!("Active Powerplan = {}", scheme_guid); // 	8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
         },
     }
+    // if powerplan.scheme.is_none() {
+    //     scheme_guid = power_scheme.get_value("ActivePowerScheme").unwrap();
+    //     // println!("active_power_scheme = {}", scheme_guid);
+
+    //     let power_scheme_name = power_scheme.open_subkey(&scheme_guid).unwrap();
+    //     let scheme_name: String = power_scheme_name.get_value("FriendlyName").unwrap();
+    //     println!("Active Powerplan = {} {}", scheme_name, scheme_guid); // 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+    // } else {
+    //     scheme_guid = powerplan.scheme.unwrap();
+    // }
 
     let scheme_guid_reg = power_scheme.open_subkey(&scheme_guid);
     if scheme_guid_reg.is_err() {
@@ -938,6 +1005,9 @@ pub fn check_powerplan(powerplan: &PowerPlan, write_settings: bool) {
     
     //  setting_index
     //   Specifies which possible value this setting is set to. A list of possible values is returned by running powercfg /query.
+
+    // Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes\2cd4d4f0-d578-48f4-be43-d145b9b71cbe\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583
+    // ACSettingIndex 0x64 (100)
 
     for sub_guid in powerplan.data.iter() {
         let sub_guid_path = scheme_guid_reg.open_subkey(sub_guid.path.clone());
@@ -1218,6 +1288,67 @@ pub fn restore_default_reg(reg_settings: &Settings) -> std::io::Result<()> {
         }
 
         reg_t.commit()?;
+    }
+
+    Ok(())
+}
+
+// TODO: control mmsys.cpl
+// Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render\{d75eb062-247f-4dd3-b4d5-55fea9c4cee2}\Properties
+// https://github.com/romanadamski/ChangeSoundDeviceTray/blob/268fc877622442d9f991ec670e785ebcabc51aeb/AudioSwitcher.AudioApi.CoreAudio/Internal/PropertyKeys.cs
+// https://github.com/MSDN-WhiteKnight/answers/blob/7e87ccf0edd6978802964503aa4ff8efda5ece62/tools/data/ru.stackoverflow.com/posts/A743709.md
+// https://stackoverflow.com/questions/52954849/enabling-recording-devices-programmatically
+// https://www.pinvoke.net/default.aspx/Constants/PROPERTYKEY.html
+// https://github.com/AutomatedLab/DeviceManagement/blob/master/DeviceManagementLib/Device.cs
+// https://windowsreport.com/audio-device-disabled-windows-10/
+// https://codemachine.com/articles/how_windows_sets_default_audio_device.html
+// https://social.technet.microsoft.com/Forums/en-US/590fd01d-f27b-48db-bad4-9497474ff185/setting-playback-and-communication-device-via-registry?forum=win10itprosetup
+
+#[allow(dead_code)]
+pub fn apply_audio_settings(_write_settings: bool) -> std::io::Result<()> {
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    let nics = hklm.open_subkey_with_flags(
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Render",
+        KEY_READ,
+    )?;
+
+    let addr_type_value = RegValue {
+        bytes: vec![1u8, 0, 0, 0],
+        vtype: REG_DWORD,
+    };
+
+    let mut soundcard_guid = Vec::new();
+
+    for maybe_nic in nics.enum_keys() {
+        let nic_id = maybe_nic?;
+        let nic = nics.open_subkey_with_flags(nic_id.clone(), KEY_READ)?;
+
+        for n in nic.enum_values() {
+            match n {
+                Err(e) => panic!("{:?}", e),
+                Ok(ratio) => {
+                    if ratio.0 == "DeviceState" && ratio.1 == addr_type_value {
+                        soundcard_guid.push(nic_id.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    for guid in soundcard_guid.iter() {
+        println!("soundcard_guid HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Render\\{}\\Properties", guid);
+
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let key = hklm.open_subkey(format!(
+            "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Render\\{}\\Properties",
+            guid
+        ))?;
+
+        let bus: String = key.get_value("{b3f8fa53-0004-438e-9003-51a46e139bfc},2")?;
+        let name: String = key.get_value("{b3f8fa53-0004-438e-9003-51a46e139bfc},6")?;
+        // let deviceNameKey: String = key.get_value("{a45c254e-df1c-4efd-8020-67d146a850e0},2")?; // getOutputDevice(guid):
+
+        println!("Name: {}, Bus: {}", name, bus)
     }
 
     Ok(())
